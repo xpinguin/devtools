@@ -3,14 +3,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"log"
 	"strings"
 
 	"go/parser"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 type FmtString string
@@ -81,5 +80,15 @@ func main() {
 		}
 		return true
 	})
-	spew.Dump(typeFmts)
+
+	fmt.Println(len(typeFmts))
+	for t, ss := range typeFmts {
+		fmt.Printf("%s:\n", t)
+		for _, s := range ss {
+			//if s.IsFmt() {
+			fmt.Println("\t" + s)
+			//}
+		}
+		fmt.Println()
+	}
 }
