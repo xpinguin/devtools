@@ -93,10 +93,10 @@ func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []F
 					if s := FmtString(argStr); fmtCall.fmt == "" && s.IsFmt() {
 						fmtCall.fmt = s
 					} else if fmtCall.fmt != "" {
-						argStr = strings.ReplaceAll(argStr, fmtCall.recv+".", "_.")
-						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+",", ", _,")
-						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+")", ", _)")
-						argStr = strings.ReplaceAll(argStr, "("+fmtCall.recv+",", "(_,")
+						argStr = strings.ReplaceAll(argStr, fmtCall.recv+".", "|_|.")
+						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+",", ", |_|,")
+						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+")", ", |_|)")
+						argStr = strings.ReplaceAll(argStr, "("+fmtCall.recv+",", "(|_|,")
 
 						fmtCall.args = append(fmtCall.args, argStr)
 					}
