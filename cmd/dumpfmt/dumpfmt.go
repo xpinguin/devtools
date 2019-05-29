@@ -6,10 +6,15 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"io/ioutil"
 	"log"
 	"strings"
 
 	"go/parser"
+
+	"github.com/davecgh/go-spew/spew"
+	"golang.org/x/tools/go/ast/astutil"
+	_ "golang.org/x/tools/go/ast/astutil"
 )
 
 type FmtString string
@@ -18,13 +23,84 @@ func (s *FmtString) IsFmt() bool {
 	return strings.Contains(string(*s), "%")
 }
 
-func loadFile(fname string) (fset *token.FileSet, r *ast.File) {
+func loadFile(fname string) (fset *token.FileSet, r *ast.File, text string) {
 	fset = token.NewFileSet()
 	r, err := parser.ParseFile(fset, fname, nil, parser.AllErrors)
 	if err != nil {
 		log.Fatal("Failed to parse file: ", err)
 	}
-	return fset, r
+
+	data, _ := ioutil.ReadFile(fname)
+	text = string(data)
+	return fset, r, text
+}
+
+type FmtCall struct {
+	name string
+	fmt  FmtString
+	args []string
+
+	recv, closure string
+	closureParams []string
+}
+
+func nodeSrc(fset *token.FileSet, ftext string, n ast.Node) string {
+	pos := fset.Position(n.Pos())
+	endpos := fset.Position(n.End())
+	return ftext[pos.Offset:endpos.Offset]
+}
+
+func posSrc(fset *token.FileSet, ftext string, s, e token.Pos) string {
+	return ftext[fset.Position(s).Offset : fset.Position(e).Offset+1]
+}
+
+func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []FmtCall) {
+	var fmtCall FmtCall
+
+	astutil.Apply(
+		stx,
+		func(c *astutil.Cursor) bool {
+			switch x := c.Node().(type) {
+			case *ast.FuncDecl:
+				fmtCall.closure = x.Name.Name
+				if x.Recv != nil && len(x.Recv.List) > 0 {
+					if fmtCall.closure != "String" {
+						return false
+					}
+					fmtCall.recv = x.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name
+				}
+				for _, par := range x.Type.Params.List {
+					fmtCall.closureParams = append(fmtCall.closureParams, nodeSrc(fset, ftext, par))
+				}
+
+			case *ast.CallExpr:
+				fmtCall.name = nodeSrc(fset, ftext, x.Fun)
+				fmtCall.args = []string{}
+				fmtCall.fmt = ""
+				for _, arg := range x.Args {
+					argStr := strings.TrimSpace(nodeSrc(fset, ftext, arg))
+					if s := FmtString(argStr); fmtCall.fmt == "" && s.IsFmt() {
+						fmtCall.fmt = s
+					} else if fmtCall.fmt != "" {
+						fmtCall.args = append(fmtCall.args, argStr)
+					}
+				}
+				if fmtCall.fmt != "" {
+					calls = append(calls, fmtCall)
+					return false
+				}
+			}
+			return true
+		},
+		func(c *astutil.Cursor) bool {
+			switch c.Node().(type) {
+			case *ast.FuncDecl:
+				fmtCall = FmtCall{}
+			}
+			return true
+		},
+	)
+	return calls
 }
 
 func main() {
@@ -38,57 +114,13 @@ func main() {
 	}
 
 	////
-	_, stx := loadFile(*srcpath)
+	fset, stx, flines := loadFile(*srcpath)
 
-	typeFmts := map[string][]FmtString{}
-	var typeName, funcName string
-
-	ast.Inspect(stx, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.FuncDecl:
-			funcName = x.Name.Name
-			if x.Recv == nil || len(x.Recv.List) == 0 {
-				typeName = funcName
-				break
-			}
-
-			switch r := x.Recv.List[0].Type.(type) {
-			case *ast.StarExpr:
-				typeName = r.X.(*ast.Ident).Name
-			default:
-				log.Printf("Unk receiver: %#v", typeName)
-				typeName = ""
-				funcName = ""
-			}
-
-		case *ast.BasicLit:
-			if x.Kind != token.STRING {
-				break
-			}
-
-			s := FmtString(x.Value)
-			if !s.IsFmt() && funcName != "String" {
-				break
-			}
-			if typeName != "" {
-				fmts := typeFmts[typeName]
-				if fmts == nil {
-					fmts = []FmtString{}
-				}
-				typeFmts[typeName] = append(fmts, s)
-			}
-		}
-		return true
-	})
-
-	fmt.Println(len(typeFmts))
-	for t, ss := range typeFmts {
-		fmt.Printf("%s:\n", t)
-		for _, s := range ss {
-			//if s.IsFmt() {
-			fmt.Println("\t" + s)
-			//}
-		}
+	for _, c := range collectFmtCalls(stx, fset, flines) {
+		spew.Dump(c)
 		fmt.Println()
 	}
+
+	return
+
 }
