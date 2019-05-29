@@ -12,7 +12,6 @@ import (
 
 	"go/parser"
 
-	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/tools/go/ast/astutil"
 	_ "golang.org/x/tools/go/ast/astutil"
 )
@@ -24,11 +23,13 @@ func (s *FmtString) IsFmt() bool {
 }
 
 type FmtCall struct {
-	name string
+	recv string
+
 	fmt  FmtString
 	args []string
+	name string
 
-	recv, closure string
+	closure       string
 	closureParams []string
 }
 
@@ -120,10 +121,28 @@ func main() {
 	////
 	fset, stx, flines := loadFile(*srcpath)
 
+	scopes := map[string]FmtCall{}
+	cnt, total := 0, 0
 	for _, c := range collectFmtCalls(stx, fset, flines) {
-		spew.Dump(c)
-		fmt.Println()
+		scopeName := c.closure
+		if c.recv != "" {
+			scopeName = c.recv + "." + scopeName
+			///
+			fmt.Printf("%s(%s) .. %s(%s)\n\n",
+				c.recv, strings.TrimSpace(string(c.fmt)),
+				c.recv, strings.Join(c.args, ", "))
+			cnt++
+		}
+		total++
+		///
+		if _, ok := scopes[scopeName]; !ok {
+			scopes[scopeName] = c
+		}
 	}
+
+	fmt.Println("UNIQUE: ", len(scopes))
+	fmt.Println("WITH-RECEIVER: ", cnt)
+	fmt.Println("TOTAL: ", total)
 
 	return
 
