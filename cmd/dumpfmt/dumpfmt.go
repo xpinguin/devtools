@@ -10,6 +10,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+
 	"go/parser"
 
 	"golang.org/x/tools/go/ast/astutil"
@@ -23,7 +25,7 @@ func (s *FmtString) IsFmt() bool {
 }
 
 type FmtCall struct {
-	recv string
+	recvTy string
 
 	fmt  FmtString
 	args []string
@@ -31,6 +33,8 @@ type FmtCall struct {
 
 	closure       string
 	closureParams []string
+
+	recv string
 }
 
 ////
@@ -71,7 +75,10 @@ func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []F
 					if fmtCall.closure != "String" {
 						return false
 					}
-					fmtCall.recv = x.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name
+					fmtCall.recvTy = strcase.ToSnake(x.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name)
+					if ns := x.Recv.List[0].Names; len(ns) > 0 {
+						fmtCall.recv = ns[0].Name
+					}
 				}
 				for _, par := range x.Type.Params.List {
 					fmtCall.closureParams = append(fmtCall.closureParams, nodeSrc(fset, ftext, par))
@@ -86,6 +93,11 @@ func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []F
 					if s := FmtString(argStr); fmtCall.fmt == "" && s.IsFmt() {
 						fmtCall.fmt = s
 					} else if fmtCall.fmt != "" {
+						argStr = strings.ReplaceAll(argStr, fmtCall.recv+".", "_.")
+						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+",", ", _,")
+						argStr = strings.ReplaceAll(argStr, ", "+fmtCall.recv+")", ", _)")
+						argStr = strings.ReplaceAll(argStr, "("+fmtCall.recv+",", "(_,")
+
 						fmtCall.args = append(fmtCall.args, argStr)
 					}
 				}
@@ -125,12 +137,12 @@ func main() {
 	cnt, total := 0, 0
 	for _, c := range collectFmtCalls(stx, fset, flines) {
 		scopeName := c.closure
-		if c.recv != "" {
-			scopeName = c.recv + "." + scopeName
+		if c.recvTy != "" {
+			scopeName = c.recvTy + "." + scopeName
 			///
 			fmt.Printf("%s(%s) .. %s(%s)\n\n",
-				c.recv, strings.TrimSpace(string(c.fmt)),
-				c.recv, strings.Join(c.args, ", "))
+				c.recvTy, strings.TrimSpace(string(c.fmt)),
+				c.recvTy, strings.Join(c.args, ", "))
 			cnt++
 		}
 		total++
