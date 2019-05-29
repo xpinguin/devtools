@@ -23,6 +23,16 @@ func (s *FmtString) IsFmt() bool {
 	return strings.Contains(string(*s), "%")
 }
 
+type FmtCall struct {
+	name string
+	fmt  FmtString
+	args []string
+
+	recv, closure string
+	closureParams []string
+}
+
+////
 func loadFile(fname string) (fset *token.FileSet, r *ast.File, text string) {
 	fset = token.NewFileSet()
 	r, err := parser.ParseFile(fset, fname, nil, parser.AllErrors)
@@ -35,15 +45,7 @@ func loadFile(fname string) (fset *token.FileSet, r *ast.File, text string) {
 	return fset, r, text
 }
 
-type FmtCall struct {
-	name string
-	fmt  FmtString
-	args []string
-
-	recv, closure string
-	closureParams []string
-}
-
+////
 func nodeSrc(fset *token.FileSet, ftext string, n ast.Node) string {
 	pos := fset.Position(n.Pos())
 	endpos := fset.Position(n.End())
@@ -54,6 +56,7 @@ func posSrc(fset *token.FileSet, ftext string, s, e token.Pos) string {
 	return ftext[fset.Position(s).Offset : fset.Position(e).Offset+1]
 }
 
+////
 func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []FmtCall) {
 	var fmtCall FmtCall
 
@@ -103,6 +106,7 @@ func collectFmtCalls(stx ast.Node, fset *token.FileSet, ftext string) (calls []F
 	return calls
 }
 
+////
 func main() {
 	////
 	srcpath := flag.String("file", `C:\_go\wrk\src\golang.org\x\tools\go\ssa\print.go`, "Go source file")
