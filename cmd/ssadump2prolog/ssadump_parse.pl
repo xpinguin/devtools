@@ -9,8 +9,9 @@ prologue -->
 	comment("Name", Name),
 	comment("Package", Pkg),
 	comment("Location", Loc),
-	%%
+	% ---
 	sig(Rcv, As, Rs), maplist(is_list, [Rcv, As, Rs]).
+	% ---
 
 
 
@@ -24,14 +25,9 @@ sig(FuncName, (RcvName, RcvType), As, Rs) -->
 		string_without(" ", RcvName),
 		string_without(" ", RcvType),
 	")",
-	string_without(" ", FuncName), "(",
-		%% TODO: args
-		sig_args(As),
-	")",
-	"(",
-		%% TODO: rets
-		sig_rets(Rs),
-	")".
+	string_without(" ", FuncName), 
+	"(",	sig_args(As), ")",
+	"(",	sig_rets(Rs), ")".
 
 block_label(Id, PredsNum, SuccsNum, Comment) --> 
 	digits(Id), ":", blanks,
