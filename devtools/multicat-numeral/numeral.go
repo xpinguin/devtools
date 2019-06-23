@@ -103,8 +103,8 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 		for pfx, cardinality := range indents {
 			if constrs := strings.TrimPrefix(line, pfx); constrs == strings.TrimLeft(line, "\t") {
 				depth := len(pfx)
-				if depth < lastDepth {
-					depthFieldPos[lastDepth] = 1
+				for dd := lastDepth; dd > depth; dd-- {
+					depthFieldPos[dd] = 1
 				}
 				if depth != lastDepth {
 					lastDepth = depth
