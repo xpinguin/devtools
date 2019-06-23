@@ -90,7 +90,7 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 					lastDepth = depth
 				}
 				/////
-				nline = fmt.Sprintf("%d:%d\t//%d\t|%s\t**%d", len(pfx), depthFieldPos[depth], numerator+1, constrs, cardinality)
+				nline = fmt.Sprintf("%d:%.2d\t//%d\t|%s\t**%d", len(pfx), depthFieldPos[depth], numerator+1, constrs, cardinality)
 				/////
 				depthFieldPos[depth] += 1
 				break
