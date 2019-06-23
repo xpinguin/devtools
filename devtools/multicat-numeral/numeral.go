@@ -31,15 +31,35 @@ func StripStructSrc(structSrc string) (src string, indentCnt map[string]int) {
 
 	indentCnt = map[string]int{}
 	for _, line := range structLines {
-		stripped := srcStructLn.ReplaceAllString(line, "$1$4")
-		src += strings.TrimRight(stripped, " }\t{") + "\n"
+		/////// HACK
+		var indent string
+		if typeLine := strings.TrimPrefix(line, "type"); typeLine != line {
+			line = " " + strings.TrimLeft(typeLine, " \t")
+			indent = "toplevel"
+		}
+		////////
 
-		indent := whitespacePfxLn.ReplaceAllString(stripped, "$1")
+		stripped := srcStructLn.ReplaceAllString(line, "$1$4")
+		if strings.HasSuffix(stripped, "}") {
+			continue
+		}
+
+		////// HACK
+		switch indent {
+		case "toplevel":
+			indent = ""
+			stripped = stripped[1:]
+		default:
+			indent = whitespacePfxLn.ReplaceAllString(stripped, "$1")
+		}
+		//////////
+
+		src += strings.TrimRight(stripped, " }\t{") + "\n"
 		indentCnt[indent] += 1
 
 	}
 
-	return src, indentCnt
+	return strings.TrimSpace(src), indentCnt
 }
 
 //////////////////////
@@ -51,11 +71,11 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 
 	/// FIXME
 	lineTypeOffs := 0
-	if strings.HasPrefix(strings.TrimSpace(structLines[0]), "type") {
+	/*if strings.HasPrefix(strings.TrimSpace(structLines[0]), "type") {
 		lineTypeOffs = 1
-	}
+	}*/
 	////
-	delete(indents, "") // module-level
+	//delete(indents, "") // module-level*/
 	////
 	for pfx, c := range indents {
 		if strings.ContainsAny(pfx, " ") { // NB. space and \t could repr different cardinality, eg ' ' = \t div 4 (or 2, or 8, you see, don't you?)
