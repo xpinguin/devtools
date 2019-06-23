@@ -1,10 +1,14 @@
 ====================================
-%% type LineIndentCnt smap[string]int
-0:01:len=4
-1:01:len=0		=>[1]				|
-1:02:len=1      =>[11]				|\t
-1:03:len=2  	=>[11]				|\t\t
-1:04:len=3  	=>[14]				|\t\t\t
+%% type LineIndentCnt map[string]**int
+%%%%%%%%%%%%%
+% ????
+%%%%%%%%%%%%%
+0:01	.len=4		|[string, int]
+					|
+1:01	.len=0		|""		  	||**1
+1:02	.len=1		|"\t"     	||**11
+1:03	.len=2		|"\t\t"   	||**11
+1:04	.len=3		|"\t\t\t" 	||**14
 
 %% type Sample struct {
 %%%%%%%%%%%%%
