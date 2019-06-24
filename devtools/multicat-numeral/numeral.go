@@ -89,20 +89,33 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 	////
 
 	// or 'denominator' instead???
-	var lastDepth int
+	var lastDepth int = 0
+
 	depthFieldPos := map[int]uint{}
-	/// stupid pre-init, just to be sure
-	for d := 0; d <= len(indents); d++ {
+	globalDepthFieldPos := map[int]uint{}
+	var globalCard int
+	for pfx, card := range indents {
+		globalCard += card
+
+		d := len(pfx)
 		depthFieldPos[d] = 1
+		globalDepthFieldPos[d] = 1
 	}
-	///
 
 	for numerator, line := range structLines[lineTypeOffs:] {
 		var nline string
 
-		for pfx, cardinality := range indents {
+		for pfx, depthCard := range indents {
 			if constrs := strings.TrimPrefix(line, pfx); constrs == strings.TrimLeft(line, "\t") {
 				depth := len(pfx)
+				posCardStrs := []string{}
+				for idt := ""; len(idt) < depth; idt += "\t" {
+					if card, ok := indents[idt]; ok {
+						posCardStrs = append(posCardStrs,
+							fmt.Sprintf("%d/%d", globalDepthFieldPos[len(idt)]-1, card))
+					}
+				}
+				posCardStrs = append(posCardStrs, fmt.Sprintf("%d/%d", globalDepthFieldPos[depth], depthCard))
 				for dd := lastDepth; dd > depth; dd-- {
 					depthFieldPos[dd] = 1
 				}
@@ -110,9 +123,12 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 					lastDepth = depth
 				}
 				/////
-				nline = fmt.Sprintf("%d:%.2d\t//%d\t|%s\t**%d", len(pfx), depthFieldPos[depth], numerator+1, constrs, cardinality)
+
+				posCards := strings.Join(posCardStrs, " + ")
+				nline = fmt.Sprintf("%d:[%s]=%d/%d\t\t\t|%s", depth, posCards, numerator+1, globalCard, constrs)
 				/////
 				depthFieldPos[depth] += 1
+				globalDepthFieldPos[depth] += 1
 				break
 			}
 		}
