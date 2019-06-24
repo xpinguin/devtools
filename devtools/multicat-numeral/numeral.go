@@ -125,7 +125,7 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 				/////
 
 				posCards := strings.Join(posCardStrs, " + ")
-				nline = fmt.Sprintf("%d:[%s]=%d/%d\t\t\t|%s", depth, posCards, numerator+1, globalCard, constrs)
+				nline = fmt.Sprintf("%d:(%s)/%d==%d/%d\t\t\t|%s", depth, posCards, globalCard, numerator+1, globalCard, constrs)
 				/////
 				depthFieldPos[depth] += 1
 				globalDepthFieldPos[depth] += 1
