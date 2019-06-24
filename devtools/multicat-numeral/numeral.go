@@ -104,34 +104,38 @@ func NumerateStructSrc(structSrc string) (nsrc string) {
 
 	for numerator, line := range structLines[lineTypeOffs:] {
 		var nline string
-
-		for pfx, depthCard := range indents {
-			if constrs := strings.TrimPrefix(line, pfx); constrs == strings.TrimLeft(line, "\t") {
-				depth := len(pfx)
-				posCardStrs := []string{}
-				for idt := ""; len(idt) < depth; idt += "\t" {
-					if card, ok := indents[idt]; ok {
-						posCardStrs = append(posCardStrs,
-							fmt.Sprintf("%d/%d", globalDepthFieldPos[len(idt)]-1, card))
-					}
-				}
-				posCardStrs = append(posCardStrs, fmt.Sprintf("%d/%d", globalDepthFieldPos[depth], depthCard))
-				for dd := lastDepth; dd > depth; dd-- {
-					depthFieldPos[dd] = 1
-				}
-				if depth != lastDepth {
-					lastDepth = depth
-				}
-				/////
-
-				posCards := strings.Join(posCardStrs, " + ")
-				nline = fmt.Sprintf("%d:(%s)/%d==%d/%d\t\t\t|%s", depth, posCards, globalCard, numerator+1, globalCard, constrs)
-				/////
-				depthFieldPos[depth] += 1
-				globalDepthFieldPos[depth] += 1
+		var pfx string
+		for _, c := range line {
+			if c == '\t' {
+				pfx += string(c)
+			} else {
 				break
 			}
 		}
+		depth := len(pfx)
+		depthCard := indents[pfx]
+		constrs := strings.TrimPrefix(line, pfx)
+		posCardStrs := []string{}
+		for idt := ""; len(idt) < depth; idt += "\t" {
+			if card, ok := indents[idt]; ok {
+				posCardStrs = append(posCardStrs,
+					fmt.Sprintf("%d/%d", globalDepthFieldPos[len(idt)]-1, card))
+			}
+		}
+		posCardStrs = append(posCardStrs, fmt.Sprintf("%d/%d", globalDepthFieldPos[depth], depthCard))
+		for dd := lastDepth; dd > depth; dd-- {
+			depthFieldPos[dd] = 1
+		}
+		if depth != lastDepth {
+			lastDepth = depth
+		}
+		/////
+
+		posCards := strings.Join(posCardStrs, " + ")
+		nline = fmt.Sprintf("%d:[%s]/%d == %d/%d\t\t\t|%s", depth, posCards, globalCard, numerator+1, globalCard, constrs)
+		/////
+		depthFieldPos[depth] += 1
+		globalDepthFieldPos[depth] += 1
 
 		if nline != line {
 			nsrc += nline + "\n"
