@@ -68,7 +68,10 @@ func StripStructSrc(structSrc string) (src string, indentCnt map[string]int) {
 func NumerateStructSrc(structSrc string) (nsrc string) {
 	structSrc, indents := StripStructSrc(structSrc)
 	structLines := strings.Split(structSrc, "\n")
+	return NumerateStructSrc0(structLines, indents)
+}
 
+func NumerateStructSrc0(structLines []string, indents map[string]int) (nsrc string) {
 	/// FIXME
 	lineTypeOffs := 0
 	/*if strings.HasPrefix(strings.TrimSpace(structLines[0]), "type") {
