@@ -7,6 +7,7 @@
 
 cmd/dumpfmt/dumpfmt
 cmd/httpdir/httpdir
+cmd/oapispecgen/oapispecgen
 
 # Test binary, build with `go test -c`
 *.test
