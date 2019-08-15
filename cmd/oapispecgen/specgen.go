@@ -3,14 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 
-	"github.com/json5/json5-go"
+	"github.com/davecgh/go-spew/spew"
+
+	"github.com/hjson/hjson-go"
 	"gopkg.in/yaml.v3"
 )
 
 type (
 	_ = yaml.Encoder
-	_ = json5.Unmarshaler
 )
 
 func main() {
@@ -30,5 +32,28 @@ func main() {
 
 	}
 
-	fmt.Println(specPath, ":", dataSamplePath)
+	///
+	dataSampleRaw, err := ioutil.ReadFile(dataSamplePath)
+	if err != nil {
+		fmt.Println("ERR:", err)
+		return
+	}
+
+	///
+	var dataSample map[string]interface{}
+	if err := hjson.Unmarshal(dataSampleRaw, &dataSample); err != nil {
+		fmt.Println("Failed to parse sample data:", err)
+		return
+	}
+	{
+		cfg := spew.NewDefaultConfig()
+		cfg.DisableCapacities = true
+		cfg.DisablePointerAddresses = true
+		cfg.SortKeys = true
+		cfg.SpewKeys = true
+		///
+		cfg.Dump(dataSample)
+	}
+
+	//fmt.Println(specPath, ":", dataSamplePath)
 }
