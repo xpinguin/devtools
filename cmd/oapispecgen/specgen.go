@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/gertd/go-pluralize"
@@ -43,40 +45,61 @@ func normalizeTypeName(t string) (n string) {
 	return t
 }
 
+func normalizeModelName(m string) string {
+	return strcase.ToCamel(m)
+}
+
 func oapiDefinition(name string, obj JsonObj) JsonObj {
+	name = normalizeModelName(name)
+
 	def := make(JsonObj)
 	props := make(JsonObj)
 	def["type"] = "object"
 	def["properties"] = props
 
 	for fldName, fld := range obj {
+		fldName = normalizeModelName(fldName)
+		///
 		var propDef JsonObj
 		///
 		switch x := fld.(type) {
 		case JsonObj:
-			propDef = oapiDefinition(fldName, x)[fldName].(JsonObj)
+			for _, prop := range oapiDefinition(fldName, x) {
+				propDef = prop.(JsonObj)
+				break
+			}
 		case JsonList:
 			itemsDef := make(JsonObj)
 			for _, v := range x {
 				if _, ok := v.(JsonList); ok {
-					fmt.Println("IDKWTF")
+					fmt.Fprintln(os.Stderr, "IDKWTF")
 				} else if obj, ok := v.(JsonObj); ok {
-					itemsDef = oapiDefinition(plz.Singular(fldName), obj)
+					for _, item := range oapiDefinition(plz.Singular(fldName), obj) {
+						itemsDef = item.(JsonObj)
+						break
+					}
 				} else if v != nil {
-					itemsDef = JsonObj{"type": normalizeTypeName(reflect.TypeOf(v).Name())}
+					itemsDef = JsonObj{
+						"type": normalizeTypeName(reflect.TypeOf(v).Name()),
+					}
 				}
 				break
 			}
 			if itemsDef == nil {
 				continue
 			}
-			propDef = JsonObj{"type": "array", "items": itemsDef}
+			propDef = JsonObj{
+				"type":  "array",
+				"items": itemsDef,
+			}
 		default:
 			if fld == nil {
-				fmt.Println("WARN:", "nil field:", fldName)
+				fmt.Fprintln(os.Stderr, "WARN:", "nil field:", fldName)
 				continue
 			}
-			propDef = JsonObj{"type": normalizeTypeName(reflect.TypeOf(fld).Name())}
+			propDef = JsonObj{
+				"type": normalizeTypeName(reflect.TypeOf(fld).Name()),
+			}
 		}
 		props[fldName] = propDef
 	}
@@ -97,11 +120,11 @@ func main() {
 	///
 	switch "" {
 	case specPath:
-		fmt.Println("ERR:", "No OpenAPI/Swagger YAML path has been specified")
+		fmt.Fprintln(os.Stderr, "ERR:", "No OpenAPI/Swagger YAML path has been specified")
 		flag.PrintDefaults()
 		return
 	case dataSamplePath:
-		fmt.Println("Assuming STDIN for the sample response; see help")
+		fmt.Fprintln(os.Stderr, "Assuming STDIN for the sample response; see help")
 
 	}
 
@@ -146,23 +169,6 @@ func main() {
 		}
 		fmt.Println(string(defRaw))*/
 	}
-
-	///
-	/*{
-		data, err := yaml.Marshal(dataSample)
-		if err != nil {
-			fmt.Println("Failed to marshal sample data into YAML:", err)
-			return
-		}
-		fmt.Println(string(data))
-	}
-
-	i := 0
-	for k, v := range dataSample["data"].(JsonObj)["flights"].(JsonList)[0].(JsonObj) {
-		fmt.Println(i, ":", k, ":", reflect.TypeOf(v))
-		fmt.Print("-----------\n")
-		i++
-	}*/
 
 	//fmt.Println(specPath, ":", dataSamplePath)
 }
