@@ -18,12 +18,13 @@ import (
 )
 
 type (
-	_ = yaml.Encoder
-)
-
-type (
 	JsonObj  = map[string]interface{}
 	JsonList = []interface{}
+
+	OapiDef struct {
+		Type       string                 `yaml:"type"`
+		Properties map[string]interface{} `yaml:"properties"`
+	}
 )
 
 var (
