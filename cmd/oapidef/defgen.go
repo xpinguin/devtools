@@ -112,20 +112,14 @@ func init() {
 }
 
 func main() {
-	var specPath, dataSamplePath string
+	var dataSamplePath string
 	///
-	flag.StringVar(&specPath, "spec", "", "OpenAPI/Swagger YAML path")
 	flag.StringVar(&dataSamplePath, "sample", "", "Path to the sample API response")
 	flag.Parse()
 	///
 	switch "" {
-	case specPath:
-		fmt.Fprintln(os.Stderr, "ERR:", "No OpenAPI/Swagger YAML path has been specified")
-		flag.PrintDefaults()
-		return
 	case dataSamplePath:
 		fmt.Fprintln(os.Stderr, "Assuming STDIN for the sample response; see help")
-
 	}
 
 	///
@@ -141,15 +135,7 @@ func main() {
 		fmt.Println("Failed to parse sample data:", err)
 		return
 	}
-	{
-		cfg := spew.NewDefaultConfig()
-		cfg.DisableCapacities = true
-		cfg.DisablePointerAddresses = true
-		cfg.SortKeys = true
-		cfg.SpewKeys = true
-		///
-		//cfg.Dump(dataSample)
-	}
+	spew.Fdump(os.Stderr, dataSample)
 
 	///
 	flightSample := dataSample["data"].(JsonObj)["flights"].(JsonList)[0].(JsonObj)
@@ -162,13 +148,5 @@ func main() {
 			fmt.Println("Failed to marshal sample data into YAML:", err)
 			return
 		}
-		/*defRaw, err := yaml.Marshal(def)
-		if err != nil {
-			fmt.Println("Failed to marshal sample data into YAML:", err)
-			return
-		}
-		fmt.Println(string(defRaw))*/
 	}
-
-	//fmt.Println(specPath, ":", dataSamplePath)
 }
