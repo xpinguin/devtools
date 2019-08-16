@@ -9,6 +9,11 @@ cmd/dumpfmt/dumpfmt
 cmd/httpdir/httpdir
 cmd/oapidef/oapidef
 
+# Misc
+cmd/*/*.yaml
+cmd/*/*.yml
+cmd/*/*.json
+
 # Test binary, build with `go test -c`
 *.test
 

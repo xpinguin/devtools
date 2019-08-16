@@ -4,5 +4,6 @@ A default place to drop OS-independent pieces of code which lacks scope and gene
 
 ### Index
 
-* [httpdir](cmd/httpdir): serve directory using the HTTP, `httpdir -h`
-* [dumpfmt](cmd/dumpfmt): dump printf-like format strings from the .go source files, afair (I don't really remember the particular context and intent)
+* [httpdir](cmd/httpdir): serve directory using the HTTP (see `httpdir -h`)
+* [oapidef](cmd/oapidef): OpenAPI/Swagger definition generator from the given JSON sample (see `oapidef -h`)
+* [dumpfmt](cmd/dumpfmt): dump printf-like format strings from the .go source files, semi-generic draft
