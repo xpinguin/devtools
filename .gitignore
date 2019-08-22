@@ -8,6 +8,7 @@
 cmd/dumpfmt/dumpfmt
 cmd/httpdir/httpdir
 cmd/oapidef/oapidef
+cmd/miniredis/miniredis
 
 # Misc
 cmd/*/*.yaml
