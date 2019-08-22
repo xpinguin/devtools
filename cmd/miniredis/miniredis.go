@@ -25,16 +25,15 @@ func (db *RedisDB) Persist() error {
 	if db.filePath == "" {
 		return errors.New("persist: no file path has been specified")
 	}
-	f, err := os.Open(db.filePath)
+	f, err := os.Create(db.filePath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
 	indent := "  "
-	r := ""
 	for _, k := range db.Keys() {
-		r += fmt.Sprintf("- %s\n", k)
+		fmt.Fprintf(f, "- %s\n", k)
 		t := db.Type(k)
 		switch t {
 		case "string":
@@ -43,26 +42,26 @@ func (db *RedisDB) Persist() error {
 		case "hash":
 			fields, _ := db.HKeys(k)
 			for _, hk := range fields {
-				r += fmt.Sprintf("%s%s: %s\n", indent, hk, db.HGet(k, hk))
+				fmt.Fprintf(f, "%s%s: %s\n", indent, hk, db.HGet(k, hk))
 			}
 		case "list":
 			items, _ := db.List(k)
 			for _, lk := range items {
-				r += fmt.Sprintf("%s%s\n", indent, lk)
+				fmt.Fprintf(f, "%s%s\n", indent, lk)
 			}
 		case "set":
 			membs, _ := db.Members(k)
 			for _, mk := range membs {
-				r += fmt.Sprintf("%s%s\n", indent, mk)
+				fmt.Fprintf(f, "%s%s\n", indent, mk)
 			}
 		case "zset":
 			zmembs, _ := db.ZMembers(k)
 			for _, zm := range zmembs {
 				score, _ := db.ZScore(k, zm)
-				r += fmt.Sprintf("%s%f: %s\n", indent, score, zm)
+				fmt.Fprintf(f, "%s%f: %s\n", indent, score, zm)
 			}
 		default:
-			r += fmt.Sprintf("%s(a %s, fixme!)\n", indent, t)
+			fmt.Fprintf(os.Stderr, "FIXME: %s(a %s, fixme!)\n", indent, t)
 		}
 	}
 	return nil
