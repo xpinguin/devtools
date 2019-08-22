@@ -1,0 +1,19 @@
+---
+somehash:
+  token: y267edfdsf
+  login: "user"
+  password: "123"
+
+somestr: someval
+
+somelist:
+  - item0
+  - item1
+  
+someset:
+  item0: true
+  item1: true
+  
+somezset:
+  0.78: ololo
+  1.0: hhh
