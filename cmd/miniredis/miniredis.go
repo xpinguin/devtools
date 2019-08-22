@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -68,12 +69,24 @@ func (db *RedisDB) Persist() error {
 }
 
 func main() {
+	////
+	var (
+		srvAddr       string
+		persistPeriod time.Duration
+		dbsNums       IntSliceFlag
+	)
+	flag.StringVar(&srvAddr, "listen", "127.0.0.1:6379", "Listen address")
+	flag.DurationVar(&persistPeriod, "period", 30*time.Second, "DB store period")
+	flag.Var(&dbsNums, "db", "DB number to store (multiple DBs are allowed)")
+	flag.Parse()
+
+	////
 	srv := miniredis.NewMiniRedis()
 	defer srv.Close()
 
-	dbs := []*RedisDB{
-		WrapRedisDB(srv, 0, "redis_db0.txt"),
-		WrapRedisDB(srv, 10, "redis_db10.txt"),
+	dbs := []*RedisDB{}
+	for _, dbNum := range dbsNums {
+		dbs = append(dbs, WrapRedisDB(srv, dbNum, fmt.Sprintf("redis_db%d.txt", dbNum)))
 	}
 	persistAll := func() {
 		for _, db := range dbs {
@@ -86,14 +99,13 @@ func main() {
 	}
 	defer persistAll()
 
-	if err := srv.StartAddr("127.0.0.1:6379"); err != nil {
+	if err := srv.StartAddr(srvAddr); err != nil {
 		fmt.Println("Unable to start miniredis:", err)
 		return
 	}
 
-	//db0, db10 := srv.DB(0), srv.DB(10)
 	for true {
-		time.Sleep(2 * time.Minute)
+		time.Sleep(persistPeriod)
 		persistAll()
 	}
 }
