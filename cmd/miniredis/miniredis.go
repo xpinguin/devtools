@@ -10,8 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/alicebob/miniredis"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -124,8 +122,64 @@ func (db *RedisDB) Load() error {
 		return err
 	}
 
-	spew.Dump(dbData)
+	for k, datum := range dbData {
+		var err error
+		switch v := datum.(type) {
+		case []interface{}:
+			err = db.LoadList(k, v)
+		case map[interface{}]interface{}:
+			err = db.LoadSet(k, v)
+		case map[string]interface{}:
+			err = db.LoadHash(k, v)
+		case string:
+			err = db.LoadStrKey(k, v)
+		default:
+			err = fmt.Errorf("Unknown data type: %#v", datum)
+		}
+		if err != nil {
+			fmt.Println("ERR: unable to load datum: ", err, ";;", datum)
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (db *RedisDB) LoadList(k string, xs []interface{}) (err error) {
+	ss := []string{}
+	for _, x := range xs {
+		ss = append(ss, x.(string))
+	}
+	_, err = db.Push(k, ss...)
+	return
+}
+
+func (db *RedisDB) LoadSet(k string, xs map[interface{}]interface{}) (err error) {
+
+	ss := []string{}
+	for x, b := range xs {
+		switch v := x.(type) {
+		case float64:
+			db.ZAdd(k, v, b.(string))
+		case string:
+			ss = append(ss, x.(string))
+		}
+	}
+	if len(ss) > 0 {
+		_, err = db.SetAdd(k, ss...)
+	}
+	return
+}
+
+func (db *RedisDB) LoadHash(k string, xs map[string]interface{}) (err error) {
+	for fld, v := range xs {
+		db.HSet(k, fld, v.(string))
+	}
+	return nil
+}
+
+func (db *RedisDB) LoadStrKey(k, v string) error {
+	return db.Set(k, v)
 }
 
 func main() {
@@ -169,7 +223,7 @@ func main() {
 			}
 		}
 	}
-	//defer persistAll()
+	defer persistAll()
 
 	//// --
 	loadAll()
