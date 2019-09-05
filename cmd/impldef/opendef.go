@@ -79,19 +79,14 @@ type Param struct {
 	Items *Param `json:"items,omitempty" yaml:"items,omitempty"`
 }
 
-func readOpenDef(defPath string) (def *OpenDef, err error) {
-	defData, err := ioutil.ReadFile(defPath)
-	if err != nil {
-		return nil, err
-	}
-
+func parseOpenDef(defData []byte, syn string) (def *OpenDef, err error) {
 	def = &OpenDef{}
-	switch ext := strings.ToLower(path.Ext(defPath)); ext {
-	case ".yaml", ".yml":
+	switch syn {
+	case "yaml":
 		if err := yaml.Unmarshal(defData, def); err != nil {
 			return nil, err
 		}
-	case ".json", ".js":
+	case "json":
 		/*if err := hjson.Unmarshal(defData, def); err != nil {
 		log.Print("WARN: hjson-go: failed to unmarshal: %v; trying `encoding/json`...", err)*/
 		if err := json.Unmarshal(defData, def); err != nil {
@@ -99,25 +94,58 @@ func readOpenDef(defPath string) (def *OpenDef, err error) {
 		}
 		//}
 	default:
-		log.Fatalf("ERR: parser not implemented for: %s (%s)", ext, defPath)
+		return nil, fmt.Errorf("ERR: parser not implemented for the format '%s'", syn)
 	}
 	return
 }
 
 func main() {
 	////////
-	var inputDefPath string
-	var outFmt string
+	var inFmt, inFile string
+	var outFmt, outFile string
+	var out *os.File = os.Stdout
 	////////
-	flag.StringVar(&inputDefPath, "in", "", "OpenAPI yaml/json definition to convert")
-	flag.StringVar(&outFmt, "out", "json", "Output format: json, yaml, spew, printf, ...")
+	flag.StringVar(&inFile, "in", "", "OpenAPI yaml/json definition to convert")
+	flag.StringVar(&outFmt, "fmt", "json", "Output format: json, yaml, spew, printf, go, ...")
+	flag.StringVar(&outFile, "o", "", "Output file")
 	flag.Parse()
-
-	////////
-	def, err := readOpenDef(inputDefPath)
-	if err != nil {
-		log.Fatal("ERR:", err)
+	///
+	if inFile == "" || (outFmt == "" && outFile == "") {
+		flag.Usage()
 		return
+	}
+	inFmt = path.Ext(inFile)[1:]
+	///
+	if outFmt == "" {
+		switch ext := strings.TrimLeft(path.Ext(outFile), "."); ext {
+		case "go", "json":
+			outFmt = ext
+		case "yaml", "yml":
+			outFmt = "yaml"
+		case "txt":
+			outFmt = "spew"
+		default:
+			outFmt = "json"
+		}
+	}
+	///
+	if outFile != "" {
+		var err error
+		out, err = os.Create(outFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer out.Close()
+	}
+	///
+	inData, err := ioutil.ReadFile(inFile)
+	if err != nil {
+		log.Fatal("ReadFile:", err)
+	}
+	////////
+	def, err := parseOpenDef(inData, inFmt)
+	if err != nil {
+		log.Fatal("parseOpenDef:", err)
 	}
 
 	////
@@ -147,6 +175,5 @@ func main() {
 		log.Fatal("ERR:", err)
 		return
 	}
-	os.Stdout.Write(defDump)
-	//os.Stdout.Write([]byte{'\n'})
+	out.Write(defDump)
 }
