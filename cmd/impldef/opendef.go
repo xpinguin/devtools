@@ -136,6 +136,8 @@ func main() {
 		defDump = []byte(fmt.Sprintf("%#v\n", def))
 	case "spew":
 		defDump = []byte(spewCfg.Sdump(def))
+	case "go":
+		defDump = GoSrcDump(def)
 	default:
 		err = fmt.Errorf("Unknown output format: %s", outFmt)
 	}
@@ -147,39 +149,4 @@ func main() {
 	}
 	os.Stdout.Write(defDump)
 	//os.Stdout.Write([]byte{'\n'})
-
-	////
-	/*schema := def["definitions"]
-
-	////
-	methods := map[string]interface{}{} // operationId -> descr
-	for k, v := range def["paths"].(map[interface{}]interface{}) {
-		fmt.Println(k)
-		md := v.(map[interface{}]interface{})
-		for httpMethod, descrRaw := range md {
-			switch strings.ToLower(httpMethod.(string)) {
-			case "get", "post":
-			default:
-				continue
-			}
-			descr := descrRaw.(map[interface{}]interface{})
-			methName, ok := descr["operationId"]
-			if !ok {
-				log.Print("WARN: no `operationId` key in: ", k)
-				continue
-			}
-			//args, rets := descr["parameters"], descr["responses"]
-			/////
-			methods[methName.(string)] = map[string]interface{}{
-				"args": descr["parameters"],
-				"rets": descr["responses"],
-			}
-		}
-
-	}
-
-	////
-	//spewCfg.Dump(methods)*/
-	///
-	//_ = schema
 }
