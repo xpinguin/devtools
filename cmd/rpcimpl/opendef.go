@@ -79,27 +79,7 @@ type Param struct {
 	Items *Param `json:"items,omitempty" yaml:"items,omitempty"`
 }
 
-func readOpenDef(defPath string) (def map[string]interface{}, err error) {
-	defData, err := ioutil.ReadFile(defPath)
-	if err != nil {
-		return nil, err
-	}
-
-	def = map[string]interface{}{}
-	switch ext := strings.ToLower(path.Ext(defPath)); ext {
-	case ".yaml", ".yml":
-		if err := yaml.Unmarshal(defData, def); err != nil {
-			return nil, err
-		}
-	case ".json", ".js":
-		fallthrough
-	default:
-		log.Fatalf("ERR: parser not implemented for: %s (%s)", ext, defPath)
-	}
-	return
-}
-
-func readOpenDef2(defPath string) (def *OpenDef, err error) {
+func readOpenDef(defPath string) (def *OpenDef, err error) {
 	defData, err := ioutil.ReadFile(defPath)
 	if err != nil {
 		return nil, err
@@ -134,7 +114,7 @@ func main() {
 	flag.Parse()
 
 	////////
-	def, err := readOpenDef2(inputDefPath)
+	def, err := readOpenDef(inputDefPath)
 	if err != nil {
 		log.Fatal("ERR:", err)
 		return
