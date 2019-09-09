@@ -106,7 +106,7 @@ func main() {
 	var out *os.File = os.Stdout
 	////////
 	flag.StringVar(&inFile, "in", "", "OpenAPI yaml/json definition to convert")
-	flag.StringVar(&outFmt, "fmt", "json", "Output format: json, yaml, spew, printf, go, ...")
+	flag.StringVar(&outFmt, "fmt", "", "Output format: json, yaml, spew, printf, go, ...")
 	flag.StringVar(&outFile, "o", "", "Output file")
 	flag.Parse()
 	///
@@ -118,14 +118,12 @@ func main() {
 	///
 	if outFmt == "" {
 		switch ext := strings.TrimLeft(path.Ext(outFile), "."); ext {
-		case "go", "json":
-			outFmt = ext
 		case "yaml", "yml":
 			outFmt = "yaml"
 		case "txt":
 			outFmt = "spew"
 		default:
-			outFmt = "json"
+			outFmt = ext
 		}
 	}
 	///
@@ -166,6 +164,8 @@ func main() {
 		defDump = []byte(spewCfg.Sdump(def))
 	case "go":
 		defDump = GoSrcDump(def)
+	case "dot":
+		defDump = DotDump(def)
 	default:
 		err = fmt.Errorf("Unknown output format: %s", outFmt)
 	}
