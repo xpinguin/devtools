@@ -10,6 +10,7 @@ cmd/httpdir/httpdir
 cmd/oapidef/oapidef
 cmd/miniredis/miniredis
 cmd/impldef/impldef
+cmd/idlc/idlc
 
 # Misc
 cmd/*/*.yaml
