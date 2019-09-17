@@ -3,18 +3,13 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 //go:generate go get -v golang.org/x/tools/cmd/stringer
 
 ///////////////////////////
-///////////////////////////
-type Document struct {
-	name string
-	lns  int
-}
-
 ///////////////////////////
 //go:generate stringer -type=NameAfx
 type NameAfx int
@@ -50,10 +45,13 @@ const (
 	INT
 	FLOAT
 	PB_ANY
-	//PB_MESSAGE
 	PB_TIMESTAMP
 	PB_DURATION
 )
+
+///////////////////////////
+const hiddenTypes = NONE /* ... | INT | PB_ANY | ... */
+const hiddenFlags = NULL | DIRECTIVE | FIELD | VARIANT
 
 ///////////////////////////
 /** REM it is somewhat helpful to think about "terminal" & "non-terminal" fields */
@@ -112,15 +110,31 @@ func (msg *Message) Name() string {
 ///////////////////////////
 ///////////////////////////
 func (f *Field) String() string {
-	flags := f.flags & ^FIELD
+	parts := []string{}
 	////
-	if flags|FIELD == f.flags {
-		return fmt.Sprintf("%s = %d",
-			strings.Join([]string{flags.String(), f.typ.String(), f.name}, " "),
-			f.tag,
-		)
+	flags := f.flags & ^hiddenFlags
+	typ := f.typ & ^hiddenTypes
+	////
+	if flags != NameAfx(0) {
+		for i := 1; i <= int(flags); i = i << 1 {
+			if flags&NameAfx(i) != 0 {
+				parts = append(parts, strings.ToLower(NameAfx(i).String()))
+			}
+		}
 	}
-	return strings.Join([]string{flags.String(), f.name}, " ")
+	if typ != TypeAfx(0) {
+		for i := 1; i <= int(typ); i = i << 1 {
+			if typ&TypeAfx(i) != 0 {
+				parts = append(parts, strings.ToLower(TypeAfx(i).String()))
+			}
+		}
+	}
+	parts = append(parts, f.name)
+	////
+	if f.flags&FIELD != 0 {
+		parts = append(parts, "=", strconv.FormatInt(int64(f.tag), 10))
+	}
+	return strings.Join(parts, " ")
 }
 
 func (meth *Method) String() (res string) {
