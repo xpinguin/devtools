@@ -93,19 +93,12 @@ type ProtoPkg struct {
 ///////////////////////////
 ///////////////////////////
 func (f *Field) Name() (res string) {
-	flags := f.flags.String()
-	////
-	if f.typ == NONE {
-		return strings.Join([]string{flags, f.name}, " ")
-	}
-	////
-	typ := f.typ.String()
-	return strings.Join([]string{flags, typ, f.name}, " ")
+	return f.name
 }
 
-func (msg *Message) Name() string {
+/*func (msg *Message) Name() string {
 	return msg.Field.name
-}
+}*/
 
 ///////////////////////////
 ///////////////////////////
